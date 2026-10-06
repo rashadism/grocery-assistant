@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shoppy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* DocuForge-derived tokens: blue reserved for navigation/primary
+       actions and links, purple for accents (price), never mixed into the
+       same interactive context. */
+    --bg: #FAFAFA;
+    --surface: #FFFFFF;
+    --surface-raised: #F4F4F5;
+    --border: #E4E4E7;
+    --border-hover: #D4D4D8;
+    --text: #18181B;
+    --text-muted: #6B7280;
+
+    --primary: #2563EB;
+    --primary-dark: #1D4ED8;
+    --primary-ink: #ffffff;
+    --primary-tint: #EFF6FF;
+    --secondary: #7C3AED;
+    --warning: #CA8A04;
+    --warning-tint: #FFFBEB;
+    --error: #DC2626;
+    --error-tint: #FEF2F2;
+    --success: #16A34A;
+
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --radius-xl: 16px;
+    --radius-full: 9999px;
+
+    --space-1: 4px;
+    --space-2: 8px;
+    --space-3: 16px;
+    --space-4: 24px;
+    --space-5: 32px;
+    --space-6: 48px;
+
+    --shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.04);
+    --shadow-medium: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-large: 0 12px 32px rgba(0, 0, 0, 0.10);
+
+    --font-headline: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, ui-sans-serif, sans-serif;
+    --font-mono: 'Fira Code', ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.7;
+    background:
+      radial-gradient(1100px 600px at 12% -10%, rgba(37, 99, 235, 0.07), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(124, 58, 237, 0.05), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  button {
+    font: inherit;
+    cursor: pointer;
+  }
+  button:focus-visible, input:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+  }
+
+  #app { display: flex; height: 100vh; }
+
+  /* ---- Chat pane ----
+     Default: centered single column, floating free on the page background
+     - no boxed panel, no vertical hard borders. Only once the live browser
+     panel actually opens does a single divider appear between the two. */
+  #chat-pane {
+    flex: 0 1 720px;
+    width: 100%;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg);
+    min-width: 0;
+  }
+  #app.live-expanded #chat-pane {
+    flex: 0 0 400px;
+    margin: 0;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+  }
+
+  #brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    padding: var(--space-4);
+  }
+  #brand .brand-text { flex: 1; min-width: 0; }
+  #brand h1 {
+    font-family: var(--font-headline);
+    font-size: 19px;
+    font-weight: 800;
+    margin: 0;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+  #brand h1 .wordmark-accent { color: var(--primary); }
+
+  #user-badge {
+    display: none;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+  }
+  #user-avatar {
+    width: 28px; height: 28px; border-radius: var(--radius-full);
+    background: var(--primary); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; flex-shrink: 0;
+  }
+  #user-badge-name { font-size: 13px; font-weight: 500; color: var(--text); }
+
+  #user-menu-wrap { position: relative; }
+  #user-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 160px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-large);
+    padding: 6px;
+    z-index: 20;
+  }
+  #user-menu.open { display: block; }
+  #user-menu button[role="menuitem"] {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 13px;
+    text-align: left;
+  }
+  #user-menu button[role="menuitem"]:hover { background: var(--surface-raised); }
+  #user-menu button[role="menuitem"] svg { color: var(--text-muted); flex-shrink: 0; }
+  .icon-btn {
+    width: 32px; height: 32px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-full);
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+  }
+  .icon-btn:hover { background: var(--surface-raised); color: var(--text); border-color: var(--border-hover); }
+
+  /* ---- Username modal ---- */
+  #username-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(2px);
+    padding: var(--space-4);
+  }
+  #username-gate {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 100%;
+    max-width: 380px;
+    background: var(--surface);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-large);
+    padding: var(--space-5);
+  }
+  #username-gate h2 { font-family: var(--font-headline); font-size: 20px; font-weight: 700; margin: 0; }
+  #username-gate label { font-size: 14px; font-weight: 500; }
+  #username-gate input {
+    width: 100%;
+    padding: 10px 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    transition: border-color 0.15s;
+  }
+  #username-gate input:hover { border-color: var(--border-hover); }
+  #username-gate input:focus { border: 2px solid var(--primary); padding: 9px 13px; outline: none; }
+  #username-gate input::placeholder { color: var(--text-muted); }
+
+  .btn-primary {
+    height: 38px;
+    padding: 0 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: var(--primary-ink);
+    border: none;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    box-shadow: none;
+    transition: background 0.15s;
+  }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:active { transform: translateY(0.5px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: default; }
+  #username-error { font-size: 12px; color: var(--error); min-height: 1em; }
+
+  /* ---- Empty state: a real hero, not a chat bubble floating alone in a
+     big empty page. Replaced by #log once the first message is sent. ---- */
+  #empty-state {
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-4);
+    gap: var(--space-2);
+  }
+  #empty-state h2 { font-family: var(--font-headline); font-size: 24px; font-weight: 700; margin: 0; color: var(--text); }
+  #empty-state p { font-size: 14px; color: var(--text-muted); margin: 0 0 var(--space-2); max-width: 340px; }
+  #empty-state #suggestions { justify-content: center; max-width: 480px; }
+
+  #log {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4);
+    display: none;
+    flex-direction: column;
+  }
+  /* Normal top-anchored chat flow - the empty/pre-message case is its own
+     #empty-state hero now, so #log never needs to center short content. */
+  #log-inner { display: flex; flex-direction: column; gap: var(--space-3); width: 100%; }
+  .msg { display: flex; flex-direction: column; gap: 4px; max-width: 88%; }
+  .msg .role { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+  .msg .bubble { padding: 12px 16px; border-radius: var(--radius-lg); word-wrap: break-word; box-shadow: var(--shadow-subtle); line-height: 1.7; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.user .bubble { background: var(--primary); color: #fff; white-space: pre-wrap; border-bottom-right-radius: 4px; box-shadow: var(--shadow-medium); }
+  .msg.agent { align-self: flex-start; }
+  .msg.agent .bubble { background: var(--surface); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+  .msg.error .bubble { background: var(--error-tint); border: 1px solid var(--error); color: var(--error); white-space: pre-wrap; }
+
+  /* ---- Product carousel ---- */
+  .carousel {
+    display: flex; align-items: center; gap: var(--space-2);
+    width: fit-content; max-width: 100%;
+    margin: var(--space-3) auto 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+  }
+  .carousel-arrow {
+    flex-shrink: 0;
+    width: 32px; height: 32px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: var(--radius-full);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    box-shadow: var(--shadow-subtle);
+    transition: background 0.15s, box-shadow 0.15s, transform 0.1s;
+  }
+  .carousel-arrow:hover { background: var(--surface-raised); box-shadow: var(--shadow-medium); }
+  .carousel-arrow:active { transform: scale(0.94); }
+  .carousel-arrow:disabled { opacity: 0; pointer-events: none; }
+
+  .carousel-body { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); }
+  .carousel-card {
+    display: flex;
+    flex-direction: column;
+    width: 240px;
+    text-decoration: none;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    box-shadow: var(--shadow-subtle);
+    transition: box-shadow 0.15s, transform 0.1s;
+  }
+  .carousel-card:hover { box-shadow: var(--shadow-large); transform: translateY(-2px); }
+  .carousel-card img {
+    width: 100%; height: 190px;
+    object-fit: contain;
+    background: #fff;
+    border-bottom: 1px solid var(--border);
+  }
+  .carousel-info { padding: var(--space-3) var(--space-3) var(--space-3); display: flex; flex-direction: column; gap: 6px; }
+  .carousel-name { font-family: var(--font-headline); font-size: 13px; font-weight: 600; line-height: 1.4; }
+  .carousel-meta { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); }
+  .carousel-price { font-family: var(--font-mono); font-size: 15px; font-weight: 500; color: var(--secondary); }
+  .carousel-cta { font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap; }
+  .carousel-card:hover .carousel-cta { color: var(--primary); }
+
+  .carousel-dots { display: flex; gap: 6px; }
+  .carousel-dot {
+    width: 6px; height: 6px; border-radius: var(--radius-full);
+    background: var(--border);
+    border: none; padding: 0;
+    transition: background 0.15s, transform 0.15s;
+  }
+  .carousel-dot.active { background: var(--primary); transform: scale(1.3); }
+
+  .product-link { color: var(--primary); text-decoration: underline; text-decoration-color: rgba(37, 99, 235, 0.35); text-underline-offset: 2px; }
+  .product-link:hover { text-decoration-color: var(--primary); }
+
+  #suggestions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); max-width: 92%; }
+  .chip {
+    padding: 8px 16px;
+    background: var(--surface-raised);
+    border: none;
+    border-radius: var(--radius-full);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s, transform 0.1s;
+  }
+  .chip:hover { background: var(--primary-tint); color: var(--primary); transform: translateY(-1px); }
+
+  /* Rendered markdown inside agent replies - kept tight for a chat bubble,
+     not article spacing. */
+  .msg.agent .bubble > :first-child { margin-top: 0; }
+  .msg.agent .bubble > :last-child { margin-bottom: 0; }
+  .msg.agent .bubble p { margin: 0 0 0.6em; }
+  .msg.agent .bubble h3, .msg.agent .bubble h4 { font-family: var(--font-headline); font-size: 14px; font-weight: 700; margin: 0.8em 0 0.3em; }
+  .msg.agent .bubble ul, .msg.agent .bubble ol { margin: 0.2em 0 0.6em; padding-left: 1.3em; }
+  .msg.agent .bubble li { margin-bottom: 0.25em; }
+  .msg.agent .bubble strong { font-weight: 700; }
+  .msg.agent .bubble code { font-family: var(--font-mono); background: var(--surface-raised); border: 1px solid var(--border); padding: 1px 5px; border-radius: var(--radius-sm); font-size: 0.9em; }
+
+  .thinking { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); }
+  .thinking-spinner {
+    width: 15px; height: 15px; flex-shrink: 0;
+    border: 2px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: var(--radius-full);
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .thinking-text { transition: opacity 0.18s ease; }
+  .thinking-text.swapping { opacity: 0; }
+
+  #composer {
+    display: none;
+    flex-direction: column;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-4) var(--space-4);
+  }
+  #composer-row {
+    display: flex; gap: var(--space-2); align-items: flex-end;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
+    box-shadow: var(--shadow-subtle);
+    transition: border-color 0.15s, box-shadow 0.15s, padding 0.1s;
+  }
+  #composer-row:focus-within { border: 2px solid var(--primary); padding: 7px; box-shadow: var(--shadow-medium); }
+  #message-input {
+    flex: 1;
+    resize: none;
+    padding: var(--space-2) var(--space-2);
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.7;
+    max-height: 120px;
+  }
+  #message-input:focus { outline: none; }
+  #message-input::placeholder { color: var(--text-muted); }
+  #send-btn {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    transition: background 0.15s, opacity 0.15s;
+  }
+  #send-btn:hover:not(:disabled) { background: var(--primary-dark); }
+  #send-btn:disabled { opacity: 0.4; cursor: default; }
+  /* ---- Live pane: only occupies layout space once opened ---- */
+  #live-pane {
+    display: none;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-width: 0;
+  }
+  #app.live-expanded #live-pane { display: flex; }
+
+  /* Floating affordance shown whenever the panel is closed - a small
+     corner pill, not a reserved column, so the chat stays centered and
+     full-width until there's actually something to look at. */
+  #live-rail {
+    display: none;
+    position: fixed;
+    top: var(--space-4);
+    right: var(--space-4);
+    z-index: 10;
+    align-items: center;
+    gap: var(--space-2);
+    padding: 8px 14px 8px 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-subtle);
+    color: var(--text-muted);
+    transition: box-shadow 0.15s, border-color 0.15s;
+  }
+  #app.session-available:not(.live-expanded) #live-rail { display: flex; }
+  #live-rail:hover { color: var(--text); border-color: var(--border-hover); box-shadow: var(--shadow-medium); }
+  #live-rail .rail-label { font-size: 12px; font-weight: 600; }
+  #rail-badge {
+    width: 8px; height: 8px; border-radius: var(--radius-full); background: var(--text-muted); flex-shrink: 0;
+    transition: background 0.2s;
+  }
+  #rail-badge.live { background: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18); }
+  #rail-badge.warn { background: var(--warning); box-shadow: 0 0 0 3px rgba(202, 138, 4, 0.22); animation: ring 1.4s infinite; }
+  #rail-badge.error { background: var(--error); }
+  @keyframes ring { 0%, 100% { box-shadow: 0 0 0 3px rgba(202, 138, 4, 0.22); } 50% { box-shadow: 0 0 0 6px rgba(202, 138, 4, 0.1); } }
+
+  #live-status {
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  #live-status-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+  #live-status h2 { font-family: var(--font-headline); font-size: 14px; font-weight: 700; margin: 0; white-space: nowrap; }
+  #status-pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #status-dot { width: 7px; height: 7px; border-radius: var(--radius-full); background: var(--text-muted); flex-shrink: 0; transition: background 0.2s; }
+  #status-dot.live { background: var(--primary); }
+  #status-dot.warn { background: var(--warning); }
+  #status-dot.error { background: var(--error); }
+
+  #live-status-right { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+
+  .btn-ghost, .btn-warning {
+    display: none;
+    height: 32px;
+    line-height: 32px;
+    padding: 0 14px;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn-warning {
+    background: var(--warning); color: #fff;
+  }
+  .btn-warning:hover { background: #A16207; }
+  .btn-ghost { background: transparent; color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { border-color: var(--border-hover); background: var(--surface-raised); }
+
+  #collapse-live-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; flex-shrink: 0;
+    background: transparent; border: 1px solid var(--border); border-radius: var(--radius-md);
+    color: var(--text-muted);
+    transition: color 0.15s, border-color 0.15s;
+  }
+  #collapse-live-btn:hover { color: var(--text); border-color: var(--border-hover); }
+
+  #dcv-wrap { flex: 1; position: relative; background: #000; min-height: 0; }
+  #dcv-display { position: absolute; inset: 0; }
+  #dcv-placeholder {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: var(--space-2); color: #9aa3af; font-size: 13px; text-align: center; padding: var(--space-4);
+  }
+  #dcv-placeholder svg { opacity: 0.5; }
+
+  #app.needs-handoff #live-status { background: var(--warning-tint); border-bottom-color: var(--warning); }
+  #app.needs-handoff #dcv-wrap { outline: 3px solid var(--warning); outline-offset: -3px; }
+
+  @media (max-width: 860px) {
+    #app { flex-direction: column; }
+    #chat-pane { max-width: none; min-height: 0; }
+    #app.live-expanded #chat-pane { flex: 1 1 auto; border-right: none; border-bottom: 1px solid var(--border); }
+    #app.live-expanded #live-pane { flex: 0 0 50vh; }
+  }
+</style>
+</head>
+<body>
+  <div id="app">
+    <div id="chat-pane">
+      <div id="brand">
+        <div class="brand-text">
+          <h1><span class="wordmark-accent">Shoppy</span></h1>
+        </div>
+        <div id="user-badge">
+          <span id="user-avatar" aria-hidden="true"></span>
+          <span id="user-badge-name"></span>
+          <div id="user-menu-wrap">
+            <button id="user-menu-btn" class="icon-btn" type="button" aria-label="Account menu" aria-haspopup="true" aria-expanded="false">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+            <div id="user-menu" role="menu">
+              <button id="new-chat-btn" role="menuitem" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+                New chat
+              </button>
+              <button id="switch-user-btn" role="menuitem" type="button">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+                Switch user
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="empty-state">
+        <h2>What are you shopping for?</h2>
+        <p>I'll search Instacart live and compare real prices across stores.</p>
+        <div id="suggestions"></div>
+      </div>
+
+      <div id="log" role="log" aria-live="polite" aria-label="Conversation">
+        <div id="log-inner"></div>
+      </div>
+
+      <form id="composer" aria-label="Send a message">
+        <div id="composer-row">
+          <textarea id="message-input" rows="1" placeholder="Ask for something..." aria-label="Message"></textarea>
+          <button id="send-btn" type="submit" aria-label="Send message">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div id="live-pane">
+      <div id="live-status">
+        <div id="live-status-left">
+          <h2>Live Browser</h2>
+          <span id="status-pill"><span id="status-dot"></span><span id="status-text">No live session yet</span></span>
+        </div>
+        <div id="live-status-right">
+          <button id="retry-btn" class="btn-ghost" type="button">Retry connection</button>
+          <button id="continue-btn" class="btn-warning" type="button">I'm done, continue</button>
+          <button id="collapse-live-btn" type="button" aria-label="Collapse live browser panel">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="dcv-wrap">
+        <div id="dcv-display"></div>
+        <div id="dcv-placeholder">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/></svg>
+          <span>The agent's browser session will appear here once it starts browsing.</span>
+        </div>
+      </div>
+    </div>
+
+    <button id="live-rail" type="button" aria-label="Open live browser view" aria-expanded="false">
+      <span id="rail-badge" aria-hidden="true"></span>
+      <span class="rail-label">Live Browser</span>
+    </button>
+  </div>
+
+  <div id="username-modal">
+    <form id="username-gate" aria-label="Start a session">
+      <div>
+        <h2>Welcome to Shoppy</h2>
+      </div>
+      <input id="username-input" name="username" placeholder="Your name" aria-label="Your name" autocomplete="username" required>
+      <p id="username-error" role="alert"></p>
+      <button id="username-submit" class="btn-primary" type="submit">Start</button>
+    </form>
+  </div>
+
+  <script src="static/dcvjs/dcv.js"></script>
+  <script>
+    window.dcvWorkerPath = 'static/dcvjs/dcv/';
+    const USERNAME_KEY = 'grocery_assistant_username';
+    let sessionId = null;
+    const appEl = document.getElementById('app');
+    const statusText = document.getElementById('status-text');
+    const statusDot = document.getElementById('status-dot');
+    const railBadge = document.getElementById('rail-badge');
+    const logEl = document.getElementById('log');
+    const logInner = document.getElementById('log-inner');
+    const messageInput = document.getElementById('message-input');
+    const sendBtn = document.getElementById('send-btn');
+    const retryBtn = document.getElementById('retry-btn');
+
+    function setStatus(text, tone) {
+      statusText.textContent = text;
+      statusDot.className = tone || '';
+      railBadge.className = tone || '';
+    }
+
+    function setLiveExpanded(expanded) {
+      appEl.classList.toggle('live-expanded', expanded);
+      document.getElementById('live-rail').setAttribute('aria-expanded', String(expanded));
+    }
+    document.getElementById('live-rail').addEventListener('click', () => setLiveExpanded(true));
+    document.getElementById('collapse-live-btn').addEventListener('click', () => setLiveExpanded(false));
+
+    async function startSession(username) {
+      const resp = await fetch('/agent-endpoint-1/api/session', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({username}),
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Failed to start session');
+      sessionId = data.session_id;
+      localStorage.setItem(USERNAME_KEY, username);
+      document.getElementById('username-modal').style.display = 'none';
+      document.getElementById('composer').style.display = 'flex';
+      document.getElementById('user-badge-name').textContent = username;
+      document.getElementById('user-avatar').textContent = username.trim().charAt(0).toUpperCase();
+      document.getElementById('user-badge').style.display = 'flex';
+      renderSuggestions();
+      showEmptyState();
+      messageInput.focus();
+    }
+
+    const userMenu = document.getElementById('user-menu');
+    const userMenuBtn = document.getElementById('user-menu-btn');
+    function closeUserMenu() {
+      userMenu.classList.remove('open');
+      userMenuBtn.setAttribute('aria-expanded', 'false');
+    }
+    userMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = userMenu.classList.toggle('open');
+      userMenuBtn.setAttribute('aria-expanded', String(open));
+    });
+    document.addEventListener('click', (e) => {
+      if (!userMenu.contains(e.target) && e.target !== userMenuBtn) closeUserMenu();
+    });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeUserMenu(); });
+
+    document.getElementById('switch-user-btn').addEventListener('click', () => {
+      localStorage.removeItem(USERNAME_KEY);
+      location.reload();
+    });
+
+    // Starts a fresh session for the same user - a new session_id gives the
+    // agent a clean conversation history server-side (remembered taste is
+    // separate, stored in AgentCore Memory, and isn't affected).
+    document.getElementById('new-chat-btn').addEventListener('click', async () => {
+      closeUserMenu();
+      const username = localStorage.getItem(USERNAME_KEY);
+      if (!username) return;
+      setHandoffNeeded(false);
+      try {
+        await startSession(username);
+      } catch (err) {
+        appendMessage('error', 'Could not start a new chat. Please try again.');
+      }
+    });
+
+    document.getElementById('username-gate').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const username = document.getElementById('username-input').value.trim();
+      const errorEl = document.getElementById('username-error');
+      const submitBtn = document.getElementById('username-submit');
+      errorEl.textContent = '';
+      if (!username) return;
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Starting…';
+      try {
+        await startSession(username);
+      } catch (err) {
+        errorEl.textContent = err.message || 'Could not reach Shoppy. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Start';
+      }
+    });
+
+    // A returning visitor shouldn't have to re-enter their name every load -
+    // identification only needs to happen once per browser.
+    (async function restoreSession() {
+      const saved = localStorage.getItem(USERNAME_KEY);
+      if (!saved) return;
+      try {
+        await startSession(saved);
+      } catch (err) {
+        // Backend restarted or unreachable - fall back to the visible gate
+        // rather than getting stuck on a silent failure.
+      }
+    })();
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function inlineMd(s) {
+      return s
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/`([^`]+)`/g, '<code>$1</code>')
+        // Product links come straight from the model as real markdown -
+        // [Name](url) - using the exact URL tools.py handed it for that
+        // exact product. Scheme restricted to http(s) since this is
+        // model-generated text, not ours. Input is already HTML-escaped by
+        // the time this runs, so href can only contain safe entities.
+        .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (_m, text, href) => {
+          const safeHref = href.replace(/"/g, '&quot;');
+          return `<a href="${safeHref}" target="_blank" rel="noopener noreferrer" class="product-link">${text}</a>`;
+        });
+    }
+
+    // The agent's replies are LLM-authored markdown (headings, bold, bullet
+    // lists) - rendering them as plain text left asterisks and dashes on
+    // screen. This is a small, dependency-free converter for the subset the
+    // model actually uses, not a full CommonMark implementation. Input is
+    // HTML-escaped before any tag is introduced, so this stays safe even
+    // though the text is model-generated, not ours.
+    function markdownToHtml(raw) {
+      const lines = escapeHtml(raw).split('\n');
+      let html = '';
+      let inList = false;
+      for (const line of lines) {
+        const bullet = line.match(/^\s*[-*]\s+(.*)/);
+        const heading = line.match(/^(#{1,4})\s+(.*)/);
+        if (bullet) {
+          if (!inList) { html += '<ul>'; inList = true; }
+          html += `<li>${inlineMd(bullet[1])}</li>`;
+          continue;
+        }
+        if (inList) { html += '</ul>'; inList = false; }
+        if (heading) {
+          html += `<h4>${inlineMd(heading[2])}</h4>`;
+        } else if (line.trim() !== '') {
+          html += `<p>${inlineMd(line)}</p>`;
+        }
+      }
+      if (inList) html += '</ul>';
+      return html;
+    }
+
+    function appendMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = 'msg ' + role;
+      const label = document.createElement('div');
+      label.className = 'role';
+      label.textContent = role === 'user' ? 'You' : role === 'error' ? 'Error' : 'Shoppy';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      if (role === 'agent') {
+        bubble.innerHTML = markdownToHtml(text);
+      } else {
+        bubble.textContent = text;
+      }
+      div.append(label, bubble);
+      logInner.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+      return div;
+    }
+
+    // Real proof the agent browsed somewhere - the actual product photos and
+    // links it found, one at a time in a carousel. Rendered *inside* the
+    // reply bubble, right under the text, so it reads as part of the
+    // response instead of a disconnected floating card.
+    function appendEvidence(container, evidence) {
+      if (!evidence || !evidence.length) return;
+      let index = 0;
+
+      const wrap = document.createElement('div');
+      wrap.className = 'carousel';
+
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'carousel-arrow carousel-prev';
+      prevBtn.setAttribute('aria-label', 'Previous product');
+      prevBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>';
+
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'carousel-arrow carousel-next';
+      nextBtn.setAttribute('aria-label', 'Next product');
+      nextBtn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>';
+
+      const body = document.createElement('div');
+      body.className = 'carousel-body';
+
+      const card = document.createElement('a');
+      card.className = 'carousel-card';
+      card.target = '_blank';
+      card.rel = 'noopener noreferrer';
+      const img = document.createElement('img');
+      const info = document.createElement('div');
+      info.className = 'carousel-info';
+      const nameEl = document.createElement('div');
+      nameEl.className = 'carousel-name';
+      const meta = document.createElement('div');
+      meta.className = 'carousel-meta';
+      const priceEl = document.createElement('span');
+      priceEl.className = 'carousel-price';
+      const ctaEl = document.createElement('span');
+      ctaEl.className = 'carousel-cta';
+      ctaEl.textContent = 'Instacart ↗';
+      meta.append(priceEl, ctaEl);
+      info.append(nameEl, meta);
+      card.append(img, info);
+
+      const dots = document.createElement('div');
+      dots.className = 'carousel-dots';
+      const dotEls = evidence.map((_, i) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.className = 'carousel-dot';
+        dot.setAttribute('aria-label', `Go to product ${i + 1}`);
+        dot.addEventListener('click', () => { index = i; render(); });
+        dots.appendChild(dot);
+        return dot;
+      });
+
+      function render() {
+        const p = evidence[index];
+        img.src = p.image;
+        img.alt = p.name;
+        nameEl.textContent = p.name;
+        priceEl.textContent = p.price || '';
+        card.href = p.url;
+        dotEls.forEach((d, i) => d.classList.toggle('active', i === index));
+      }
+      prevBtn.addEventListener('click', () => { index = (index - 1 + evidence.length) % evidence.length; render(); });
+      nextBtn.addEventListener('click', () => { index = (index + 1) % evidence.length; render(); });
+      if (evidence.length <= 1) {
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+      }
+      render();
+
+      body.append(card, dots);
+      wrap.append(prevBtn, body, nextBtn);
+      container.appendChild(wrap);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    const STARTER_PROMPTS = [
+      'Remember that I\'m allergic to shellfish',
+      'What should I make for dinner tonight?',
+      'Add my usual stuff to the cart',
+    ];
+
+    function renderSuggestions() {
+      const chips = document.getElementById('suggestions');
+      chips.innerHTML = '';
+      for (const prompt of STARTER_PROMPTS) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'chip';
+        btn.textContent = prompt;
+        btn.addEventListener('click', () => {
+          messageInput.value = prompt;
+          document.getElementById('composer').requestSubmit();
+        });
+        chips.appendChild(btn);
+      }
+    }
+
+    // The empty state is a real hero (icon, headline, suggestions) shown
+    // before the first message - not a chat bubble floating alone in a big
+    // empty page. Swaps out for the normal transcript once a message is sent.
+    function showEmptyState() {
+      logInner.innerHTML = '';
+      logEl.style.display = 'none';
+      document.getElementById('empty-state').style.display = 'flex';
+    }
+    function showConversation() {
+      document.getElementById('empty-state').style.display = 'none';
+      logEl.style.display = 'flex';
+    }
+
+    function appendThinking() {
+      const div = document.createElement('div');
+      div.className = 'msg agent';
+      div.id = 'thinking-indicator';
+      div.innerHTML = '<div class="role">Shoppy</div>' +
+        '<div class="thinking"><span class="thinking-spinner"></span>' +
+        '<span id="thinking-text" class="thinking-text">Thinking…</span></div>';
+      logInner.appendChild(div);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    function updateThinking(action) {
+      const el = document.getElementById('thinking-text');
+      if (!el || !action || el.textContent === action) return;
+      el.classList.add('swapping');
+      setTimeout(() => {
+        el.textContent = action;
+        el.classList.remove('swapping');
+        logEl.scrollTop = logEl.scrollHeight;
+      }, 180);
+    }
+
+    function removeThinking() {
+      document.getElementById('thinking-indicator')?.remove();
+    }
+
+    messageInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        document.getElementById('composer').requestSubmit();
+      }
+    });
+    messageInput.addEventListener('input', () => {
+      messageInput.style.height = 'auto';
+      messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+    });
+
+    document.getElementById('composer').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = messageInput.value.trim();
+      if (!message || !sessionId) return;
+      showConversation();
+      appendMessage('user', message);
+      messageInput.value = '';
+      messageInput.style.height = 'auto';
+      sendBtn.disabled = true;
+      appendThinking();
+      setStatus('Thinking…');
+      tryConnectLiveView();
+
+      let data;
+      try {
+        const resp = await fetch('/agent-endpoint-1/api/chat', {
+          method: 'POST', headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({session_id: sessionId, message}),
+        });
+        const {job_id} = await resp.json();
+
+        // A turn can run well past any single request's timeout (multiple
+        // tool calls, a live browse()), so poll for the result instead of
+        // holding one long-lived connection open. Each poll tick also
+        // surfaces which tool is running right now, if any.
+        for (let attempt = 0; attempt < 150; attempt++) {
+          await new Promise(r => setTimeout(r, 2000));
+          const poll = await fetch(`/agent-endpoint-1/api/chat-result?job_id=${job_id}`);
+          data = await poll.json();
+          if (data.status !== 'pending') break;
+          updateThinking(data.current_action);
+        }
+      } catch (err) {
+        data = {error: 'Lost connection to Shoppy.'};
+      }
+
+      removeThinking();
+      if (!data || data.status === 'pending') {
+        appendMessage('error', 'Taking longer than expected, still working. Try again shortly.');
+        setStatus('Idle');
+      } else if (data.error) {
+        appendMessage('error', data.error);
+        setStatus('Idle');
+      } else {
+        const msgEl = appendMessage('agent', data.reply || 'No response');
+        const bubbleEl = msgEl.querySelector('.bubble');
+        appendEvidence(bubbleEl, data.evidence);
+        setHandoffNeeded(!!data.awaiting_handoff);
+      }
+      sendBtn.disabled = false;
+      messageInput.focus();
+      tryConnectLiveView();
+    });
+
+    function setHandoffNeeded(needed) {
+      appEl.classList.toggle('needs-handoff', needed);
+      document.getElementById('continue-btn').style.display = needed ? 'inline-block' : 'none';
+      if (needed) {
+        setLiveExpanded(true);
+        setStatus('Take it from here, then click Continue', 'warn');
+      } else {
+        setStatus(dcvState === 'connected' ? 'Live view streaming' : 'Idle', dcvState === 'connected' ? 'live' : '');
+      }
+    }
+
+    document.getElementById('continue-btn').addEventListener('click', async () => {
+      await fetch('/agent-endpoint-1/api/release-control', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({session_id: sessionId}),
+      });
+      setHandoffNeeded(false);
+      setStatus('Resumed automation', 'live');
+    });
+
+    // idle | connecting | connected | error
+    let dcvState = 'idle';
+
+    function showRetry(show) { retryBtn.style.display = show ? 'inline-block' : 'none'; }
+    retryBtn.addEventListener('click', () => { dcvState = 'idle'; showRetry(false); tryConnectLiveView(); });
+
+    async function tryConnectLiveView() {
+      if (dcvState === 'connecting' || dcvState === 'connected') return;
+      if (!sessionId) return;
+      const resp = await fetch(`/agent-endpoint-1/api/live-view-url?session_id=${sessionId}`);
+      if (!resp.ok) return;
+      // Only now do we know a browser session actually exists - reveal the
+      // rail/panel entry point, instead of it being clickable from the start
+      // with nothing behind it.
+      appEl.classList.add('session-available');
+      const {url: presignedUrl} = await resp.json();
+      dcvState = 'connecting';
+      showRetry(false);
+      document.getElementById('dcv-placeholder').style.display = 'none';
+      setStatus('Connecting to live view…');
+
+      dcv.authenticate(presignedUrl, {
+        promptCredentials: () => {},
+        error: (auth, err) => {
+          dcvState = 'error';
+          setStatus('Live view auth error', 'error');
+          showRetry(true);
+        },
+        success: async (auth, result) => {
+          const {sessionId: dcvSessionId, authToken} = result[0];
+          const freshResp = await fetch(`/agent-endpoint-1/api/live-view-url?session_id=${sessionId}`);
+          const {url: freshUrl} = await freshResp.json();
+          dcv.connect({
+            url: freshUrl,
+            sessionId: dcvSessionId,
+            authToken: authToken,
+            divId: 'dcv-display',
+            baseUrl: 'static/dcvjs',
+            // No need to sync the viewer's local clipboard with the remote
+            // session for this demo - without this, DCV repeatedly prompts
+            // for clipboard read/write permission in the browser.
+            clipboardAutoSync: false,
+            callbacks: {
+              firstFrame: () => {
+                dcvState = 'connected';
+                showRetry(false);
+                setStatus(appEl.classList.contains('needs-handoff')
+                  ? 'Take it from here, then click Continue'
+                  : 'Live view streaming', appEl.classList.contains('needs-handoff') ? 'warn' : 'live');
+              },
+              error: (err) => { dcvState = 'error'; setStatus('Live view connect error', 'error'); showRetry(true); },
+              httpExtraSearchParams: () => new URL(freshUrl).searchParams,
+              displayLayout: () => {},
+            }
+          }).catch(e => { dcvState = 'error'; setStatus('Live view connect failed', 'error'); showRetry(true); });
+        },
+        httpExtraSearchParams: () => new URL(presignedUrl).searchParams,
+      });
+    }
+  </script>
+</body>
+</html>

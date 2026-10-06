@@ -1,0 +1,51 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ClusterResourceType
+metadata:
+  name: agentcore-browser
+  annotations:
+    openchoreo.dev/description: >-
+      A project/environment-scoped Bedrock AgentCore Browser Tool resource
+      for live web automation.
+spec:
+  environmentConfigs:
+    openAPIV3Schema:
+      type: object
+      required: [region]
+      properties:
+        region:
+          type: string
+          title: Region
+          enum:
+            - us-east-1
+          description: AWS region for this Browser resource.
+  retainPolicy: Delete
+  outputs:
+    - name: browserId
+      value: "${applied.browser.status.ackResourceMetadata.arn}"
+    - name: region
+      value: "${environmentConfigs.region}"
+  resources:
+    - id: browser
+      readyWhen: "${applied.browser.status.status == \"READY\"}"
+      template:
+        apiVersion: bedrockagentcorecontrol.services.k8s.aws/v1alpha1
+        kind: Browser
+        metadata:
+          name: "${metadata.name}"
+          namespace: "${metadata.namespace}"
+          labels: ${metadata.labels}
+        spec:
+          # Same naming constraint as agentcore-memory - underscores only, no
+          # hyphens, so the project name is sanitized the same way.
+          name: "${metadata.projectName.replace('-', '_')}_${metadata.environmentName}_browser"
+          description: "OpenChoreo ${metadata.resourceNamespace} ${metadata.projectName} ${metadata.resourceName} ${metadata.environmentName}"
+          networkConfiguration:
+            networkMode: PUBLIC
+          tags:
+            openchoreo.dev/namespace: "${metadata.resourceNamespace}"
+            openchoreo.dev/project: "${metadata.projectName}"
+            openchoreo.dev/project-uid: "${metadata.projectUID}"
+            openchoreo.dev/environment: "${metadata.environmentName}"
+            openchoreo.dev/environment-uid: "${metadata.environmentUID}"
+            openchoreo.dev/resource: "${metadata.resourceName}"
+            openchoreo.dev/resource-uid: "${metadata.resourceUID}"

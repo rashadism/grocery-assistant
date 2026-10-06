@@ -1,0 +1,69 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ClusterResourceType
+metadata:
+  name: bedrock-model
+  annotations:
+    openchoreo.dev/description: >-
+      A project/environment-scoped Bedrock application inference profile for
+      an approved model.
+spec:
+  environmentConfigs:
+    openAPIV3Schema:
+      type: object
+      required: [model]
+      properties:
+        model:
+          type: string
+          title: Model
+          enum:
+            - nova-micro
+            - nova-lite
+            - nova-pro
+          description: Approved Bedrock model for this environment.
+  retainPolicy: Delete
+  outputs:
+    - name: modelName
+      value: "${environmentConfigs.model}"
+    - name: modelId
+      value: "${applied.profile.status.ackResourceMetadata.arn}"
+    - name: region
+      value: "__AWS_REGION__"
+    - name: apiKey
+      secretKeyRef:
+        name: "${metadata.name}-${environmentConfigs.model}-bedrock-api-key"
+        key: api-key
+  resources:
+    - id: profile
+      readyWhen: "${applied.profile.status.status == \"ACTIVE\"}"
+      template:
+        apiVersion: bedrock.services.k8s.aws/v1alpha1
+        kind: InferenceProfile
+        metadata:
+          name: "${metadata.name}-${environmentConfigs.model}"
+          namespace: "${metadata.namespace}"
+          labels: ${metadata.labels}
+        spec:
+          inferenceProfileName: "${metadata.name}"
+          description: "OpenChoreo ${metadata.resourceNamespace} ${metadata.projectName} ${metadata.resourceName} ${metadata.environmentName}"
+          modelSource:
+            copyFrom: >-
+              ${environmentConfigs.model == "nova-micro"
+                ? "arn:aws:bedrock:__AWS_REGION__:__AWS_ACCOUNT_ID__:inference-profile/us.amazon.nova-micro-v1:0"
+                : environmentConfigs.model == "nova-lite"
+                  ? "arn:aws:bedrock:__AWS_REGION__:__AWS_ACCOUNT_ID__:inference-profile/us.amazon.nova-lite-v1:0"
+                  : "arn:aws:bedrock:__AWS_REGION__:__AWS_ACCOUNT_ID__:inference-profile/us.amazon.nova-pro-v1:0"}
+          tags:
+            - key: openchoreo.dev/namespace
+              value: "${metadata.resourceNamespace}"
+            - key: openchoreo.dev/project
+              value: "${metadata.projectName}"
+            - key: openchoreo.dev/project-uid
+              value: "${metadata.projectUID}"
+            - key: openchoreo.dev/environment
+              value: "${metadata.environmentName}"
+            - key: openchoreo.dev/environment-uid
+              value: "${metadata.environmentUID}"
+            - key: openchoreo.dev/resource
+              value: "${metadata.resourceName}"
+            - key: openchoreo.dev/resource-uid
+              value: "${metadata.resourceUID}"

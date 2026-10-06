@@ -1,0 +1,105 @@
+apiVersion: openchoreo.dev/v1alpha1
+kind: ClusterResourceType
+metadata:
+  name: agentcore-memory
+  annotations:
+    openchoreo.dev/description: >-
+      A project/environment-scoped Bedrock AgentCore Memory resource for
+      cross-session recall.
+spec:
+  parameters:
+    openAPIV3Schema:
+      type: object
+      required: [strategies]
+      properties:
+        strategies:
+          type: array
+          minItems: 1
+          title: Memory strategies
+          description: AgentCore memory strategies this Memory extracts into long-term storage.
+          items:
+            type: object
+            required: [type, name, namespaces]
+            properties:
+              type:
+                type: string
+                title: Strategy type
+                enum: [semantic, summary, userPreference, episodic]
+              name:
+                type: string
+                title: Name
+              description:
+                type: string
+                title: Description
+              namespaces:
+                type: array
+                title: Namespaces
+                items:
+                  type: string
+  environmentConfigs:
+    openAPIV3Schema:
+      type: object
+      required: [region]
+      properties:
+        region:
+          type: string
+          title: Region
+          enum:
+            - us-east-1
+          description: AWS region for this Memory resource.
+        retentionDays:
+          type: integer
+          title: Retention (days)
+          default: 90
+          description: How long memory events are retained before expiry.
+  retainPolicy: Delete
+  outputs:
+    - name: memoryId
+      value: "${applied.memory.status.ackResourceMetadata.arn}"
+    - name: region
+      value: "${environmentConfigs.region}"
+    # Scoped AWS credentials for the consuming workload's data-plane calls
+    # (Memory + Browser + Bedrock invoke), one IAM identity per project+env.
+    # The Secret is provisioned out-of-band (see README - same pattern as
+    # bedrock-model's apiKey output), not rendered by this ResourceType's
+    # own resources[].
+    - name: accessKeyId
+      secretKeyRef:
+        name: "${metadata.projectName}-${metadata.environmentName}-agentcore-credentials"
+        key: AWS_ACCESS_KEY_ID
+    - name: secretAccessKey
+      secretKeyRef:
+        name: "${metadata.projectName}-${metadata.environmentName}-agentcore-credentials"
+        key: AWS_SECRET_ACCESS_KEY
+  resources:
+    - id: memory
+      readyWhen: "${applied.memory.status.status == \"ACTIVE\"}"
+      template:
+        apiVersion: bedrockagentcorecontrol.services.k8s.aws/v1alpha1
+        kind: Memory
+        metadata:
+          name: "${metadata.name}"
+          namespace: "${metadata.namespace}"
+          labels: ${metadata.labels}
+        spec:
+          # bedrockagentcorecontrol's name field is stricter than plain Bedrock's:
+          # letters/digits/underscore only, no hyphens - so this can't reuse
+          # metadata.name (a hyphenated K8s object name) the way InferenceProfile
+          # does, and the project name has to be sanitized the same way.
+          name: "${metadata.projectName.replace('-', '_')}_${metadata.environmentName}_memory"
+          description: "OpenChoreo ${metadata.resourceNamespace} ${metadata.projectName} ${metadata.resourceName} ${metadata.environmentName}"
+          eventExpiryDuration: ${environmentConfigs.retentionDays}
+          memoryStrategies: |
+            ${parameters.strategies.map(s,
+              s.type == "semantic" ? {"semanticMemoryStrategy": {"name": s.name, "description": s.?description.orValue(""), "namespaces": s.namespaces}} :
+              s.type == "summary" ? {"summaryMemoryStrategy": {"name": s.name, "description": s.?description.orValue(""), "namespaces": s.namespaces}} :
+              s.type == "userPreference" ? {"userPreferenceMemoryStrategy": {"name": s.name, "description": s.?description.orValue(""), "namespaces": s.namespaces}} :
+              {"episodicMemoryStrategy": {"name": s.name, "description": s.?description.orValue(""), "namespaces": s.namespaces}})}
+          tags:
+            openchoreo.dev/namespace: "${metadata.resourceNamespace}"
+            openchoreo.dev/project: "${metadata.projectName}"
+            openchoreo.dev/project-uid: "${metadata.projectUID}"
+            openchoreo.dev/environment: "${metadata.environmentName}"
+            openchoreo.dev/environment-uid: "${metadata.environmentUID}"
+            openchoreo.dev/resource: "${metadata.resourceName}"
+            openchoreo.dev/resource-uid: "${metadata.resourceUID}"

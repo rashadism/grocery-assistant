@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.blog-screenshots/
+.DS_Store
+# Amazon DCV Web Client SDK: EULA forbids redistribution, frontend/Dockerfile fetches it at build time
+frontend/static/dcvjs/
+# AWS Architecture Icons asset package: reference only, not meant to be redistributed wholesale
+Icon-package_*/
+# Local-only: account-specific Resource/Component instances and narrative design notes
+/demo/
+/docs/
